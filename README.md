@@ -2,6 +2,8 @@
 
 [![arXiv](https://img.shields.io/badge/arXiv-2507.11806-b31b1b.svg)](https://arxiv.org/abs/2507.11806)
 
+![Ranking](media/ranking.png)
+
 This repository contains the code and data for the paper "MOFSimBench: Evaluating Universal Machine Learning Interatomic Potentials for Metal-Organic Framework Molecular Modeling". The project aims to benchmark the performance of various Universal Machine Learning Interatomic Potentials (uMLIPs) in simulating Metal-Organic Frameworks (MOFs) across different properties, including structural optimization, simulation stability, and bulk modulus and heat capacity.
 
 Results of runs completed for this paper to reproduce the figures can be found here: [https://dx.doi.org/10.6084/m9.figshare.30234010](https://dx.doi.org/10.6084/m9.figshare.30234010)
