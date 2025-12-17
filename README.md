@@ -1,6 +1,9 @@
 # MOFSimBench: Benchmarking Universal Machine Learning Interatomic Potentials for Metal-Organic Frameworks
 
 [![arXiv](https://img.shields.io/badge/arXiv-2507.11806-b31b1b.svg)](https://arxiv.org/abs/2507.11806)
+[![Article](https://img.shields.io/badge/Article-npj%20Comp%20Mat-blue)](https://doi.org/10.1038/s41524-025-01872-3)
+
+
 
 ![Ranking](media/ranking.png)
 
@@ -182,17 +185,15 @@ Structures can be defined using file paths or loaded from the structure shortcut
 
 
 ## Citation
-
-If you use this benchmark in your research, please cite our paper:
+For more technical details about the benchmark, please refer to our [paper](https://doi.org/10.1038/s41524-025-01872-3).
+And if you use this benchmark in your research, please cite our paper:
 
 ```bibtex
-@misc{krass2025mofsimbench,
-      title={MOFSimBench: Evaluating Universal Machine Learning Interatomic Potentials In Metal-Organic Framework Molecular Modeling}, 
-      author={Hendrik Kraß and Ju Huang and Seyed Mohamad Moosavi},
-      year={2025},
-      eprint={2507.11806},
-      archivePrefix={arXiv},
-      primaryClass={cond-mat.mtrl-sci},
-      url={https://arxiv.org/abs/2507.11806},
+@article{krass2025mofsimbench,
+  title={MOFSimBench: evaluating universal machine learning interatomic potentials in metal-organic framework molecular modeling},
+  author={Kra{\ss}, Hendrik and Huang, Ju and Moosavi, Seyed Mohamad},
+  journal={npj Computational Materials},
+  year={2025},
+  publisher={Nature Publishing Group}
 }
 ```
