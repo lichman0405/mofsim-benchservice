@@ -1,28 +1,102 @@
-# MOFSimBench: Benchmarking Universal Machine Learning Interatomic Potentials for Metal-Organic Frameworks
+# MOFSim-BenchService: A RESTful API Service for MOF Simulations
 
 [![arXiv](https://img.shields.io/badge/arXiv-2507.11806-b31b1b.svg)](https://arxiv.org/abs/2507.11806)
 [![Article](https://img.shields.io/badge/Article-npj%20Comp%20Mat-blue)](https://doi.org/10.1038/s41524-025-01872-3)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 
-
+> 🔗 **Original Repository**: This project is based on [AI4ChemS/mofsim-bench](https://github.com/AI4ChemS/mofsim-bench), which provides the original MOFSimBench benchmarking framework.
 
 ![Ranking](media/ranking.png)
 
-This repository contains the code and data for the paper "MOFSimBench: Evaluating Universal Machine Learning Interatomic Potentials for Metal-Organic Framework Molecular Modeling". The project aims to benchmark the performance of various Universal Machine Learning Interatomic Potentials (uMLIPs) in simulating Metal-Organic Frameworks (MOFs) across different properties, including structural optimization, simulation stability, and bulk modulus and heat capacity.
+## Overview
 
-Results of runs completed for this paper to reproduce the figures can be found here: [https://dx.doi.org/10.6084/m9.figshare.30234010](https://dx.doi.org/10.6084/m9.figshare.30234010)
+**MOFSim-BenchService** is a production-ready RESTful API service that wraps the MOFSimBench benchmarking framework, enabling programmatic access to Universal Machine Learning Interatomic Potentials (uMLIPs) for Metal-Organic Framework (MOF) simulations.
+
+### Key Features
+
+- 🚀 **RESTful API**: Full-featured FastAPI-based REST interface for MOF simulations
+- 🔧 **Multiple Task Types**: Supports optimization, stability analysis, bulk modulus, heat capacity, and interaction energy calculations
+- 📦 **Model Registry**: Unified interface for multiple uMLIP models (MACE, ORB, GRACE, etc.)
+- ⚡ **GPU Scheduling**: Intelligent multi-GPU task scheduling and resource management
+- 📊 **Real-time Monitoring**: Task progress tracking, logging, and metrics collection
+- 🔔 **Alerting System**: Configurable alerts for task failures and system issues
+- 🐳 **Docker Ready**: Containerized deployment with Docker Compose
+- 🧪 **SDK Client**: Python SDK for easy integration
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      API Layer (FastAPI)                     │
+├─────────────────────────────────────────────────────────────┤
+│  Routers: Tasks | Models | Structures | System | Alerts     │
+├─────────────────────────────────────────────────────────────┤
+│                     Core Services                            │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐│
+│  │Task Service │ │Structure Svc│ │     Model Registry      ││
+│  └─────────────┘ └─────────────┘ └─────────────────────────┘│
+├─────────────────────────────────────────────────────────────┤
+│                    Scheduler Layer                           │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐│
+│  │GPU Manager  │ │Priority Queue│ │   Task Lifecycle       ││
+│  └─────────────┘ └─────────────┘ └─────────────────────────┘│
+├─────────────────────────────────────────────────────────────┤
+│                    Worker Layer (Celery)                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## About MOFSimBench
+
+This service is built upon the original MOFSimBench project, which benchmarks the performance of various Universal Machine Learning Interatomic Potentials (uMLIPs) in simulating Metal-Organic Frameworks (MOFs) across different properties, including structural optimization, simulation stability, bulk modulus and heat capacity.
+
+Results of the original benchmark runs can be found here: [https://dx.doi.org/10.6084/m9.figshare.30234010](https://dx.doi.org/10.6084/m9.figshare.30234010)
 
 
 ## Table of Contents
 
-- [:hammer_and_wrench: Installation](#hammer_and_wrench-installation)
-- [:gear: Setting up your calculator](#gear-setting-up-your-calculator)
+- [:rocket: Quick Start](#rocket-quick-start)
+- [:package: Installation](#package-installation)
+- [:gear: API Usage](#gear-api-usage)
 - [:file_folder: Project Structure](#file_folder-project-structure)
-- [:rocket: Running the benchmark](#rocket-running-the-benchmark)
-- [:bar_chart: Analyzing the results](#bar_chart-analyzing-the-results)
+- [:whale: Docker Deployment](#whale-docker-deployment)
+- [:book: Original Benchmark Usage](#book-original-benchmark-usage)
 - [:handshake: Contributing](#handshake-contributing)
+- [:page_facing_up: Citation](#page_facing_up-citation)
 
 
-## :hammer_and_wrench: Installation
+## :rocket: Quick Start
+
+### Using Docker (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/lichman0405/mofsim-benchservice.git
+cd mofsim-benchservice
+
+# Start services
+docker-compose -f docker/docker-compose.yml up -d
+
+# API is now available at http://localhost:8000
+```
+
+### Using Python
+
+```bash
+# Install dependencies
+pip install -e .
+
+# Start the API server
+python scripts/run_server.py
+
+# Start a worker (in another terminal)
+python scripts/run_worker.py
+```
+
+
+## :package: Installation
 
 The recommended way to run the benchmark is via Conda environments and SLURM. The SLURM scripts expect environments to be named `mb_your-model`.
 
@@ -60,6 +134,60 @@ Our NpT tests rely on this driver, which is not currently available in a pypi re
 pip install git+https://gitlab.com/ase/ase.git
 ```
 
+
+## :gear: API Usage
+
+### Python SDK
+
+```python
+from sdk.client import MOFSimClient
+
+# Initialize client
+client = MOFSimClient(base_url="http://localhost:8000")
+
+# List available models
+models = client.list_models()
+print(models)
+
+# Submit an optimization task
+task = client.submit_task(
+    task_type="optimization",
+    model_name="mace_mof_large",
+    structure_id="HKUST-1",
+    parameters={"fmax": 0.05, "max_steps": 500}
+)
+
+# Check task status
+status = client.get_task_status(task["task_id"])
+print(status)
+
+# Get results when completed
+results = client.get_task_results(task["task_id"])
+```
+
+### REST API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/models` | GET | List available models |
+| `/api/v1/structures` | GET | List uploaded structures |
+| `/api/v1/structures` | POST | Upload a new structure |
+| `/api/v1/tasks` | POST | Submit a new task |
+| `/api/v1/tasks/{task_id}` | GET | Get task status |
+| `/api/v1/tasks/{task_id}/results` | GET | Get task results |
+| `/api/v1/system/gpus` | GET | Get GPU status |
+| `/api/v1/health` | GET | Health check |
+
+### Supported Task Types
+
+- **optimization**: Geometry optimization
+- **single_point**: Single point energy calculation
+- **stability**: Stability analysis (MD simulation)
+- **bulk_modulus**: Bulk modulus calculation
+- **heat_capacity**: Heat capacity calculation
+- **interaction_energy**: Gas-MOF interaction energy
+
+
 ## :gear: Setting up your calculator
 
 Set up your calculator in the `mof_benchmark/setup/calculator.yaml` and `mof_benchmark/setup/calculator.py` files.
@@ -93,7 +221,21 @@ It should output energy, forces, and stresses, run a short optimization, and a q
 The repository is organized as follows:
 
 
-- `mof_benchmark/`: Contains the core Python package.
+- `api/`: FastAPI application layer
+	- `routers/`: API route handlers
+	- `schemas/`: Pydantic models for request/response validation
+	- `middleware/`: Error handling and logging middleware
+- `core/`: Core business logic
+	- `models/`: Model registry and loader
+	- `scheduler/`: GPU management and task scheduling
+	- `services/`: Task, structure, and log services
+	- `tasks/`: Task executors for different calculation types
+- `workers/`: Celery worker configuration
+- `db/`: Database models and CRUD operations
+- `sdk/`: Python SDK client
+- `docker/`: Docker configuration files
+- `tests/`: Unit and integration tests
+- `mof_benchmark/`: Original benchmark package
 	- `analysis/`: Scripts and Streamlit pages for analyzing and visualizing results.
 	- `experiments/`: Scripts and configurations for running tasks.
 		- `scripts/`: Python scripts for different experiments (optimization, stability, heat capacity, bulk modulus).
@@ -101,7 +243,21 @@ The repository is organized as follows:
 	- `setup/`: Configuration files for calculators (e.g., `calculators.yaml`, `calculator.py`).
 
 
-## :rocket: Running the benchmark
+## :whale: Docker Deployment
+
+```bash
+# Build and start all services
+docker-compose -f docker/docker-compose.yml up -d --build
+
+# View logs
+docker-compose -f docker/docker-compose.yml logs -f
+
+# Stop services
+docker-compose -f docker/docker-compose.yml down
+```
+
+
+## :book: Original Benchmark Usage
 
 The benchmark is optimized to run on distributed systems managed with SLURM and can be run with a single command. On different systems, each task can also be easily called using the respective Python scripts.
 
@@ -170,23 +326,21 @@ streamlit run Overview.py
 
 ## :handshake: Contributing
 
-The benchmark can be extended with new tasks and models due to its modular design.
+Contributions are welcome! The project can be extended with new task types, models, and features.
 
-To create a new task, we refer contributors to the interaction energy task in `mof_benchmark/experiments/scripts/interaction_energy` for a simple example.
+For the original benchmark tasks, refer to the interaction energy task in `mof_benchmark/experiments/scripts/interaction_energy` for a simple example.
 
-Task classes are inherited from the `TaskRunner` which handles three aspects:
-- Preparing calculator and structures based on the provided settings.
-- Calling the task for each structure.
-- Creation and cleaning of a temporary working directory, reducing filesystem load on distributed systems.
-
-To perform a task, the `run_task` method has to be implemented. Storing results needs to be handled in this method as well.
-
-Structures can be defined using file paths or loaded from the structure shortcuts defined in `mof_benchmark/experiments/structures/structures.yaml`.
+For API service contributions:
+- Add new task executors in `core/tasks/`
+- Add new API endpoints in `api/routers/`
+- Add tests in `tests/`
 
 
-## Citation
-For more technical details about the benchmark, please refer to our [paper](https://doi.org/10.1038/s41524-025-01872-3).
-And if you use this benchmark in your research, please cite our paper:
+## :page_facing_up: Citation
+
+This service is based on MOFSimBench. For more technical details about the benchmark, please refer to the [original paper](https://doi.org/10.1038/s41524-025-01872-3).
+
+If you use this project in your research, please cite the original paper:
 
 ```bibtex
 @article{krass2025mofsimbench,
@@ -197,3 +351,14 @@ And if you use this benchmark in your research, please cite our paper:
   publisher={Nature Publishing Group}
 }
 ```
+
+
+## Acknowledgments
+
+- Original MOFSimBench: [AI4ChemS/mofsim-bench](https://github.com/AI4ChemS/mofsim-bench)
+- Paper: [DOI: 10.1038/s41524-025-01872-3](https://doi.org/10.1038/s41524-025-01872-3)
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
