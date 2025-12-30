@@ -63,75 +63,109 @@ Results of the original benchmark runs can be found here: [https://dx.doi.org/10
 - [:file_folder: Project Structure](#file_folder-project-structure)
 - [:whale: Docker Deployment](#whale-docker-deployment)
 - [:book: Original Benchmark Usage](#book-original-benchmark-usage)
+- [:bar_chart: Analyzing Results](#bar_chart-analyzing-results)
 - [:handshake: Contributing](#handshake-contributing)
 - [:page_facing_up: Citation](#page_facing_up-citation)
 
 
 ## :rocket: Quick Start
 
-### Using Docker (Recommended)
+The fastest way to get started is using Docker:
+
+```bash
+# Clone and start
+git clone https://github.com/lichman0405/mofsim-benchservice.git
+cd mofsim-benchservice
+docker-compose -f docker/docker-compose.yml up -d
+
+# Access API documentation
+open http://localhost:8000/docs
+```
+
+Or using Python directly:
+
+```bash
+# Install
+pip install -e .
+
+# Run (requires Redis and PostgreSQL)
+python scripts/run_server.py  # Terminal 1
+python scripts/run_worker.py  # Terminal 2
+```
+
+
+## :package: Installation
+
+### Prerequisites
+
+- Python 3.11+
+- PostgreSQL (for production)
+- Redis (for task queue)
+- CUDA-capable GPU (recommended for model inference)
+
+### Option 1: Quick Start with Docker (Recommended)
 
 ```bash
 # Clone the repository
 git clone https://github.com/lichman0405/mofsim-benchservice.git
 cd mofsim-benchservice
 
-# Start services
+# Start all services (API, Worker, PostgreSQL, Redis)
 docker-compose -f docker/docker-compose.yml up -d
 
-# API is now available at http://localhost:8000
+# API is available at http://localhost:8000
+# API documentation: http://localhost:8000/docs
 ```
 
-### Using Python
+### Option 2: Manual Installation
+
+1. **Clone the repository:**
 
 ```bash
-# Install dependencies
+git clone https://github.com/lichman0405/mofsim-benchservice.git
+cd mofsim-benchservice
+```
+
+2. **Create a Conda environment:**
+
+```bash
+conda create -n mofsim-server python=3.11
+conda activate mofsim-server
+```
+
+3. **Install dependencies:**
+
+```bash
 pip install -e .
-
-# Start the API server
-python scripts/run_server.py
-
-# Start a worker (in another terminal)
-python scripts/run_worker.py
 ```
 
-
-## :package: Installation
-
-The recommended way to run the benchmark is via Conda environments and SLURM. The SLURM scripts expect environments to be named `mb_your-model`.
-
-1. **Create a Conda environment:**
-
-```bash
-conda create -n mb_your-model python=3.11 # or other Python version
-conda activate mb_your-model
-```
-
-2. **Clone the repository:**
-
-```bash
-git clone https://github.com/AI4ChemS/mof-umlip-benchmark
-cd mof-umlip-benchmark
-```
-
-3. **Install core dependencies:**
-
-```bash
-pip install .
-```
-
-4. **Install DFTD3 package (if needed for D3 corrections):**
-
-```bash
-pip install torch-dftd
-```
-
-5. **Make sure to install an ase version that contains the `MTKNPT` driver:**
-
-Our NpT tests rely on this driver, which is not currently available in a pypi release of `ase`. You can install it from the `ase` git repository:
+4. **Install ASE with MTKNPT driver:**
 
 ```bash
 pip install git+https://gitlab.com/ase/ase.git
+```
+
+5. **Set up environment variables:**
+
+```bash
+cp config/default.env .env
+# Edit .env with your database and Redis settings
+```
+
+6. **Initialize the database:**
+
+```bash
+alembic upgrade head
+```
+
+7. **Start the services:**
+
+```bash
+# Terminal 1: Start API server
+python scripts/run_server.py
+
+# Terminal 2: Start Celery worker
+python scripts/run_worker.py
 ```
 
 
@@ -187,33 +221,6 @@ results = client.get_task_results(task["task_id"])
 - **heat_capacity**: Heat capacity calculation
 - **interaction_energy**: Gas-MOF interaction energy
 
-
-## :gear: Setting up your calculator
-
-Set up your calculator in the `mof_benchmark/setup/calculator.yaml` and `mof_benchmark/setup/calculator.py` files.
-
-Models normally require inference-time D3 corrections; make sure to enable them for your model in the `yaml` file. A typical entry could look like this:
-
-```yml
-orb_v3:
-  model_name: orb-v3-conservative-inf-omat
-  with_d3: true
-  model_kwargs:
-    precision: float32-highest
-```
-
-Note: The calculator name is used to identify the Conda environment. For an environment named `mb_your-model`, its name is expected to be `your-model[_suffix]` with an optional suffix that is not used in the identification of the Conda environment.
-
-For the example above, the model name is `orb` and the suffix is `_v3`. The scripts expect the corresponding Conda environment to be `mb_orb`.
-
-Connect your model to the benchmark in the `calculator.py` file. Several architectures from the study are implemented already.
-
-To test that the model works, run:
-```bash
-python mof_benchmark/setup/test_calculator.py your-model
-```
-
-It should output energy, forces, and stresses, run a short optimization, and a quick speed test.
 
 ## :file_folder: Project Structure
 
