@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from api.routers import tasks, models, structures, system, alerts
+from api.metrics import router as metrics_router
 from api.middleware.logging import LoggingMiddleware
 from api.middleware.error_handler import (
     TaskNotFoundError,
@@ -120,15 +121,52 @@ async def health_check_root():
 # 带前缀的健康检查
 @app.get(f"{API_PREFIX}/health")
 async def health_check():
-    """API 健康检查"""
+    """
+    API 健康检查
+    
+    返回服务健康状态，包括：
+    - 版本信息
+    - 运行时间
+    - 组件状态（数据库、Redis、GPU）
+    """
     uptime = (datetime.utcnow() - app.state.start_time).total_seconds() if hasattr(app.state, 'start_time') else 0
+    
+    # 检查各组件状态
+    components = {}
+    overall_status = "healthy"
+    
+    # 检查 GPU
+    try:
+        from core.scheduler import get_gpu_manager
+        gpu_manager = get_gpu_manager()
+        gpu_count = len(gpu_manager.gpu_ids)
+        components["gpu"] = {
+            "status": "healthy" if gpu_count > 0 else "degraded",
+            "count": gpu_count,
+        }
+    except Exception as e:
+        components["gpu"] = {"status": "unhealthy", "error": str(e)}
+        overall_status = "degraded"
+    
+    # 检查队列
+    try:
+        from core.scheduler import get_priority_queue
+        queue = get_priority_queue()
+        components["queue"] = {
+            "status": "healthy",
+            "size": queue.size(),
+        }
+    except Exception as e:
+        components["queue"] = {"status": "unhealthy", "error": str(e)}
+        overall_status = "degraded"
     
     return success_response(
         data={
-            "status": "healthy",
+            "status": overall_status,
             "version": settings.app_version,
             "uptime_seconds": round(uptime, 2),
             "environment": settings.environment,
+            "components": components,
         }
     )
 
@@ -139,6 +177,7 @@ app.include_router(models.router, prefix=f"{API_PREFIX}/models", tags=["Models"]
 app.include_router(structures.router, prefix=f"{API_PREFIX}/structures", tags=["Structures"])
 app.include_router(system.router, prefix=f"{API_PREFIX}/system", tags=["System"])
 app.include_router(alerts.router, prefix=f"{API_PREFIX}/alerts", tags=["Alerts"])
+app.include_router(metrics_router, prefix="/metrics", tags=["Metrics"])
 
 
 # ===== 全局异常处理 =====
