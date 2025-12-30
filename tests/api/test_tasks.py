@@ -55,19 +55,33 @@ class TestHealthCheck:
 class TestModels:
     """模型 API 测试"""
     
-    def test_list_models_returns_501(self, client):
-        """测试模型列表（占位符）"""
+    def test_list_models_success(self, client):
+        """测试模型列表"""
         response = client.get("/api/v1/models")
-        assert response.status_code == 501
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert "models" in data["data"]
+        assert "total" in data["data"]
+        # 应该有内置模型
+        assert data["data"]["total"] > 0
+    
+    def test_get_model_not_found(self, client):
+        """测试获取不存在的模型"""
+        response = client.get("/api/v1/models/nonexistent_model")
+        assert response.status_code == 404
 
 
 class TestStructures:
     """结构 API 测试"""
     
-    def test_list_structures_returns_501(self, client):
-        """测试结构列表（占位符）"""
+    def test_list_structures_success(self, client):
+        """测试结构列表"""
         response = client.get("/api/v1/structures")
-        assert response.status_code == 501
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert "items" in data["data"]
 
 
 class TestSystem:
