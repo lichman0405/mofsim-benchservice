@@ -4,8 +4,11 @@
 [![Article](https://img.shields.io/badge/Article-npj%20Comp%20Mat-blue)](https://doi.org/10.1038/s41524-025-01872-3)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![Status](https://img.shields.io/badge/Status-Under%20Development-yellow.svg)](https://github.com/lichman0405/mofsim-benchservice)
 
 > 🔗 **Original Repository**: This project is based on [AI4ChemS/mofsim-bench](https://github.com/AI4ChemS/mofsim-bench), which provides the original MOFSimBench benchmarking framework.
+
+> ⚠️ **Development Status**: This project is currently under active development. Some features may be incomplete or subject to change. Contributions and feedback are welcome!
 
 ![Ranking](media/ranking.png)
 
@@ -335,12 +338,29 @@ streamlit run Overview.py
 
 Contributions are welcome! The project can be extended with new task types, models, and features.
 
+### Development Roadmap
+
+This project is under active development. Planned features include:
+
+- [ ] Complete Docker deployment configuration
+- [ ] WebSocket support for real-time task updates
+- [ ] Enhanced model caching and loading strategies
+- [ ] Comprehensive API documentation
+- [ ] Integration tests for all task types
+- [ ] Production-ready deployment guides
+- [ ] Performance benchmarking tools
+
+### How to Contribute
+
 For the original benchmark tasks, refer to the interaction energy task in `mof_benchmark/experiments/scripts/interaction_energy` for a simple example.
 
 For API service contributions:
 - Add new task executors in `core/tasks/`
 - Add new API endpoints in `api/routers/`
 - Add tests in `tests/`
+- Update documentation as needed
+
+Please feel free to open issues for bugs, feature requests, or questions!
 
 
 ## 📄 Citation
