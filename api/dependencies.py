@@ -3,19 +3,21 @@ FastAPI 依赖注入
 
 参考文档: docs/engineering_requirements.md 第五节
 """
-from typing import Generator
+from typing import Generator, Optional
 from functools import lru_cache
 
 from sqlalchemy.orm import Session
+from redis import Redis
 
-from core.config import Settings
+from core.config import Settings, get_settings
 from db.database import SessionLocal
 
 
-@lru_cache()
-def get_settings() -> Settings:
-    """获取配置（缓存单例）"""
-    return Settings()
+# 全局单例存储
+_redis_client: Optional[Redis] = None
+_gpu_manager = None
+_priority_queue = None
+_scheduler = None
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -47,7 +49,85 @@ def get_celery_app():
     return celery_app
 
 
-def get_redis_client():
+def get_redis_client() -> Optional[Redis]:
     """获取 Redis 客户端"""
-    # TODO: Phase 2 实现
-    pass
+    global _redis_client
+    
+    if _redis_client is None:
+        settings = get_settings()
+        try:
+            _redis_client = Redis.from_url(
+                settings.get_redis_url(),
+                decode_responses=True
+            )
+            # 测试连接
+            _redis_client.ping()
+        except Exception:
+            # Redis 不可用时返回 None
+            _redis_client = None
+    
+    return _redis_client
+
+
+def get_gpu_manager():
+    """获取 GPU 管理器"""
+    global _gpu_manager
+    
+    if _gpu_manager is None:
+        from core.scheduler import GPUManager
+        settings = get_settings()
+        
+        # 检测是否有 GPU
+        _gpu_manager = GPUManager(
+            gpu_ids=settings.gpu.gpu_ids if settings.gpu.gpu_ids else None,
+            reserved_gpu_ids=settings.gpu.reserved_gpu_ids,
+            mock_mode=not settings.gpu.enabled,
+        )
+    
+    return _gpu_manager
+
+
+def get_priority_queue():
+    """获取优先级队列"""
+    global _priority_queue
+    
+    if _priority_queue is None:
+        redis_client = get_redis_client()
+        
+        if redis_client is None:
+            # 无 Redis 时使用 Mock 队列
+            from core.scheduler.priority_queue import MockPriorityQueue
+            _priority_queue = MockPriorityQueue()
+        else:
+            from core.scheduler import PriorityQueue
+            _priority_queue = PriorityQueue(redis_client)
+    
+    return _priority_queue
+
+
+def get_scheduler():
+    """获取调度器"""
+    global _scheduler
+    
+    if _scheduler is None:
+        from core.scheduler import Scheduler
+        
+        gpu_manager = get_gpu_manager()
+        queue = get_priority_queue()
+        
+        _scheduler = Scheduler(
+            gpu_manager=gpu_manager,
+            queue=queue,
+        )
+    
+    return _scheduler
+
+
+def reset_singletons():
+    """重置所有单例（用于测试）"""
+    global _redis_client, _gpu_manager, _priority_queue, _scheduler
+    _redis_client = None
+    _gpu_manager = None
+    _priority_queue = None
+    _scheduler = None
+
