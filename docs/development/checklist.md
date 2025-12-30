@@ -96,26 +96,33 @@
 
 | ID | 任务 | 状态 | 完成日期 |
 |----|------|------|---------|
-| 3.1 | 统一响应格式 (api/schemas/response.py) | ⏳ | |
-| 3.2 | 错误处理中间件 | ⏳ | |
-| 3.3 | 任务提交 API (POST /tasks/{type}) | ⏳ | |
-| 3.4 | 任务查询 API (GET /tasks/{id}) | ⏳ | |
-| 3.5 | 任务结果 API (GET /tasks/{id}/result) | ⏳ | |
-| 3.6 | 任务取消 API (POST /tasks/{id}/cancel) | ⏳ | |
-| 3.7 | 任务列表 API (GET /tasks) | ⏳ | |
-| 3.8 | 批量提交 API (POST /tasks/batch) | ⏳ | |
+| 3.1 | 统一响应格式 (api/schemas/response.py) | ✅ | 2025-12-30 |
+| 3.2 | 错误处理中间件 | ✅ | 2025-12-30 |
+| 3.3 | 任务提交 API (POST /tasks/{type}) | ✅ | 2025-12-30 |
+| 3.4 | 任务查询 API (GET /tasks/{id}) | ✅ | 2025-12-30 |
+| 3.5 | 任务结果 API (GET /tasks/{id}/result) | ✅ | 2025-12-30 |
+| 3.6 | 任务取消 API (POST /tasks/{id}/cancel) | ✅ | 2025-12-30 |
+| 3.7 | 任务列表 API (GET /tasks) | ✅ | 2025-12-30 |
+| 3.8 | 批量提交 API (POST /tasks/batch) | ✅ | 2025-12-30 |
 
 ### 验收检查
 
 | 检查项 | 通过 |
 |--------|------|
-| 所有任务 API 端点可访问 | ⬜ |
-| 请求/响应格式符合 API 设计文档 | ⬜ |
-| 错误码符合定义 | ⬜ |
-| 分页功能正常 | ⬜ |
+| 所有任务 API 端点可访问 | ✅ |
+| 请求/响应格式符合 API 设计文档 | ✅ |
+| 错误码符合定义 | ✅ |
+| 分页功能正常 | ✅ |
 
 ### 备注
-_（记录遇到的问题和解决方案）_
+- 2025-12-30: Phase 3 完成
+  - 创建 CRUD 层 (db/crud/task.py, structure.py) - 封装数据库操作
+  - 创建服务层 (core/services/task_service.py) - 业务逻辑处理
+  - 实现任务 API 端点 (api/routers/tasks.py) - 6种任务类型提交、查询、取消、列表、批量
+  - 添加自定义异常处理器 (api/main.py) - TaskNotFoundError, ModelNotFoundError 等
+  - 修复 GPUSettings 配置问题
+  - 11 个任务 API 测试通过
+  - 总计 52 测试通过
 
 ---
 

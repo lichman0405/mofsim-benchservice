@@ -56,6 +56,8 @@ async def get_gpu_status(gpu_manager=Depends(get_gpu_manager)):
     
     return APIResponse(
         success=True,
+        code=200,
+        message="查询成功",
         data=GPUStatusResponse(
             gpus=gpus,
             total_gpus=len(gpus),
@@ -90,6 +92,8 @@ async def get_queue_status(
     
     return APIResponse(
         success=True,
+        code=200,
+        message="查询成功",
         data=QueueStatusResponse(
             queues=queues,
             total_pending=queue.size(),
@@ -106,6 +110,8 @@ async def get_system_config(gpu_manager=Depends(get_gpu_manager)):
     
     return APIResponse(
         success=True,
+        code=200,
+        message="查询成功",
         data=SystemConfigResponse(
             gpu_count=len(gpu_manager.gpu_ids),
             max_concurrent_tasks=len(gpu_manager.gpu_ids),  # 每 GPU 一个任务
@@ -121,6 +127,8 @@ async def get_scheduler_stats(scheduler=Depends(get_scheduler)):
     """获取调度器统计信息"""
     return APIResponse(
         success=True,
+        code=200,
+        message="查询成功",
         data=scheduler.get_stats()
     )
 

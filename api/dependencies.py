@@ -77,11 +77,13 @@ def get_gpu_manager():
         from core.scheduler import GPUManager
         settings = get_settings()
         
-        # 检测是否有 GPU
+        # 从配置中获取 GPU 设备列表
+        gpu_ids = settings.gpu.device_list if settings.gpu.device_list else None
+        
         _gpu_manager = GPUManager(
-            gpu_ids=settings.gpu.gpu_ids if settings.gpu.gpu_ids else None,
-            reserved_gpu_ids=settings.gpu.reserved_gpu_ids,
-            mock_mode=not settings.gpu.enabled,
+            gpu_ids=gpu_ids,
+            reserved_gpu_ids=[],  # 可以从配置扩展
+            mock_mode=not bool(gpu_ids),  # 没有配置 GPU 时使用 mock 模式
         )
     
     return _gpu_manager

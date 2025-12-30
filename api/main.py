@@ -14,6 +14,13 @@ from fastapi.responses import JSONResponse
 
 from api.routers import tasks, models, structures, system, alerts
 from api.middleware.logging import LoggingMiddleware
+from api.middleware.error_handler import (
+    TaskNotFoundError,
+    ModelNotFoundError,
+    StructureFormatError,
+    GPUUnavailableError,
+    ErrorCode,
+)
 from api.schemas.response import success_response
 from core.config import get_settings
 from logging_config import setup_logging, get_logger
@@ -135,6 +142,82 @@ app.include_router(alerts.router, prefix=f"{API_PREFIX}/alerts", tags=["Alerts"]
 
 
 # ===== 全局异常处理 =====
+
+@app.exception_handler(TaskNotFoundError)
+async def task_not_found_handler(request: Request, exc: TaskNotFoundError):
+    """任务未找到异常处理"""
+    logger.warning("task_not_found", task_id=exc.task_id, path=request.url.path)
+    return JSONResponse(
+        status_code=404,
+        content={
+            "success": False,
+            "code": ErrorCode.TASK_NOT_FOUND,
+            "message": "任务未找到",
+            "error": {
+                "type": "TaskNotFoundError",
+                "detail": str(exc),
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    )
+
+
+@app.exception_handler(ModelNotFoundError)
+async def model_not_found_handler(request: Request, exc: ModelNotFoundError):
+    """模型未找到异常处理"""
+    logger.warning("model_not_found", model_name=exc.model_name, path=request.url.path)
+    return JSONResponse(
+        status_code=404,
+        content={
+            "success": False,
+            "code": ErrorCode.MODEL_NOT_FOUND,
+            "message": "模型未找到",
+            "error": {
+                "type": "ModelNotFoundError",
+                "detail": str(exc),
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    )
+
+
+@app.exception_handler(StructureFormatError)
+async def structure_format_error_handler(request: Request, exc: StructureFormatError):
+    """结构格式错误异常处理"""
+    logger.warning("structure_format_error", path=request.url.path, error=str(exc))
+    return JSONResponse(
+        status_code=400,
+        content={
+            "success": False,
+            "code": ErrorCode.STRUCTURE_FORMAT_INVALID,
+            "message": "结构格式错误",
+            "error": {
+                "type": "StructureFormatError",
+                "detail": str(exc),
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    )
+
+
+@app.exception_handler(GPUUnavailableError)
+async def gpu_unavailable_handler(request: Request, exc: GPUUnavailableError):
+    """GPU 不可用异常处理"""
+    logger.error("gpu_unavailable", path=request.url.path, error=str(exc))
+    return JSONResponse(
+        status_code=503,
+        content={
+            "success": False,
+            "code": ErrorCode.GPU_UNAVAILABLE,
+            "message": "GPU 不可用",
+            "error": {
+                "type": "GPUUnavailableError",
+                "detail": str(exc),
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    )
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
