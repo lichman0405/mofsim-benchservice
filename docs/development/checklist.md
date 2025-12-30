@@ -12,7 +12,7 @@
 | Phase 6: 日志系统完善 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 日志服务+SSE+归档 |
 | Phase 7: 回调与告警系统 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | Webhook+告警规则+116测试 |
 | Phase 8: 系统管理与监控 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | Prometheus+健康检查+130测试 |
-| Phase 9: Python SDK 开发 | ⏳ 未开始 | - | - | |
+| Phase 9: Python SDK 开发 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 同步+异步客户端+38测试 |
 | Phase 10: 测试与文档 | ⏳ 未开始 | - | - | 需测试服务器 |
 | Phase 11: 部署优化 | ⏳ 未开始 | - | - | 需部署服务器 |
 
@@ -316,25 +316,50 @@
 
 | ID | 任务 | 状态 | 完成日期 |
 |----|------|------|---------|
-| 9.1 | SDK 项目结构 | ⏳ | |
-| 9.2 | 同步客户端 | ⏳ | |
-| 9.3 | 异步客户端 | ⏳ | |
-| 9.4 | 任务对象 | ⏳ | |
-| 9.5 | 异常处理 | ⏳ | |
-| 9.6 | 类型注解 | ⏳ | |
-| 9.7 | SDK 文档 | ⏳ | |
+| 9.1 | SDK 项目结构 | ✅ | 2025-12-30 |
+| 9.2 | 同步客户端 | ✅ | 2025-12-30 |
+| 9.3 | 异步客户端 | ✅ | 2025-12-30 |
+| 9.4 | 任务对象 | ✅ | 2025-12-30 |
+| 9.5 | 异常处理 | ✅ | 2025-12-30 |
+| 9.6 | 类型注解 | ✅ | 2025-12-30 |
+| 9.7 | SDK 文档 | ✅ | 2025-12-30 |
 
 ### 验收检查
 
 | 检查项 | 通过 |
 |--------|------|
-| SDK 可通过 pip 安装 | ⬜ |
-| 基本使用示例可运行 | ⬜ |
-| 类型提示完整 | ⬜ |
-| 同步/异步接口均可用 | ⬜ |
+| SDK 可通过 pip 安装 | ✅ (本地) |
+| 基本使用示例可运行 | ✅ |
+| 类型提示完整 | ✅ |
+| 同步/异步接口均可用 | ✅ |
 
 ### 备注
-_（记录遇到的问题和解决方案）_
+- 2025-12-30: Phase 9 完成
+  - 创建 sdk/mofsim_client/ 包结构:
+    - `__init__.py` - 导出所有公共接口
+    - `client.py` - MOFSimClient 同步客户端 (~650 行)
+    - `async_client.py` - AsyncMOFSimClient 异步客户端 (~550 行)
+    - `task.py` - Task/AsyncTask 任务对象 (~300 行)
+    - `models.py` - TaskInfo/TaskResult/StructureInfo/ModelInfo/GPUInfo/QueueInfo 数据模型 (~400 行)
+    - `exceptions.py` - 完整异常体系 (~280 行)
+  - 同步客户端功能:
+    - 6 种任务类型提交 (optimization, stability, bulk-modulus, heat-capacity, interaction-energy, single-point)
+    - 任务管理 (get, list, cancel, wait)
+    - 结构管理 (upload, list, get, delete)
+    - 模型管理 (list, get, load, unload)
+    - 系统状态 (GPU, queue, config, stats)
+    - 告警管理 (rules, active, history)
+    - 日志流 (get_logs, stream_logs SSE)
+  - 异步客户端: 所有同步方法的 async 版本
+  - Task 对象:
+    - wait() - 等待任务完成，支持进度回调
+    - refresh() - 刷新状态
+    - cancel() - 取消任务
+    - get_result() - 获取结果
+    - stream_logs() - 实时日志流
+  - 异常体系: MOFSimError → APIError → TaskNotFoundError/ValidationError/...
+  - 添加 38 个 SDK 测试
+  - 168 测试通过
 
 ---
 
