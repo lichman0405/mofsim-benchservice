@@ -1,0 +1,51 @@
+# MOFSimBench Worker Dockerfile
+#
+# 需要 NVIDIA GPU 支持
+# 构建: docker build -t mofsim-bench-worker -f docker/Dockerfile.worker .
+# 运行: docker run --gpus all mofsim-bench-worker
+
+FROM nvidia/cuda:11.8-runtime-ubuntu22.04
+
+LABEL maintainer="MOFSimBench Team"
+LABEL description="MOFSimBench Celery Worker with GPU Support"
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-venv \
+    python3-pip \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建 Python 符号链接
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# 复制依赖文件
+COPY pyproject.toml ./
+
+# 安装 Python 依赖
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .[gpu]
+
+# 复制应用代码
+COPY workers/ ./workers/
+COPY core/ ./core/
+COPY db/ ./db/
+COPY storage/ ./storage/
+COPY logging_config/ ./logging_config/
+COPY config/ ./config/
+
+# 创建数据目录
+RUN mkdir -p /app/data/results /app/data/models /app/data/logs
+
+# 设置环境变量
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# 启动命令
+CMD ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info", "--pool=solo", "--concurrency=1"]

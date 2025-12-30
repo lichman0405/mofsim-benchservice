@@ -3,38 +3,150 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mof_benchmark"
+name = "mofsim-bench"
 authors = [
     {name = "Hendrik Kraß", email = "hendriknkrass@gmail.com"},
+    {name = "Shibo Li", email = "shadow.li981@gmail.com"},
 ]
-description = "package description"
-version = "0.0.1"
+description = "MOFSimBench - Universal Machine Learning Interatomic Potential Benchmark for MOF Simulations"
+version = "0.1.0"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+keywords = ["MOF", "MLIP", "benchmark", "molecular simulation", "machine learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
 dependencies = [
-    "numpy",
-    "ase",
-    "pyyaml",
-    "ipykernel",
-    "numpy",
-    "pymatgen",
-    "pandas",
-    "matplotlib",
-    "scipy",
-    "submitit",
-    "streamlit",
-    "plotly",
+    # === 原有科学计算依赖 ===
+    "numpy>=1.24.0",
+    "ase>=3.22.0",
+    "pyyaml>=6.0",
+    "pymatgen>=2024.1.26",
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "scipy>=1.11.0",
+    "phonopy>=2.20.0",
+    
+    # === Web 服务框架 ===
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-multipart>=0.0.6",
+    
+    # === 异步任务队列 ===
+    "celery>=5.3.6",
+    "redis>=5.0.1",
+    
+    # === 数据库 ===
+    "sqlalchemy>=2.0.25",
+    "alembic>=1.13.1",
+    "psycopg2-binary>=2.9.9",
+    
+    # === 日志与监控 ===
+    "structlog>=24.1.0",
+    
+    # === HTTP 客户端 (SDK) ===
+    "httpx>=0.26.0",
+    
+    # === 原有分析与可视化 ===
+    "ipykernel>=6.0.0",
+    "streamlit>=1.30.0",
+    "plotly>=5.18.0",
     "ipywidgets>=7.0.0",
-    "phonopy",
-    "tueplots",
-    "fastparquet",
-    "seaborn",
-    "scikit-learn",
-    "pypalettes",
-    "pymatviz",
+    "seaborn>=0.13.0",
+    "scikit-learn>=1.3.0",
+    "fastparquet>=2023.10.0",
+    "submitit>=1.5.0",
+    "tueplots>=0.0.14",
+    "pypalettes>=0.1.0",
+    "pymatviz>=0.8.0",
 ]
 
 
 [project.optional-dependencies]
-mace = ["mace-torch"]
-mace_d3 = ["mace-torch", "torch-dftd"]
+# MLIP 模型依赖
+mace = ["mace-torch>=0.3.0"]
+mace_d3 = ["mace-torch>=0.3.0", "torch-dftd>=0.4.0"]
+orb = ["orb-models>=0.1.0"]
+omat24 = ["fairchem-core>=0.1.0"]
+grace = ["sevenn>=0.5.0"]  # GRACE 使用 SevenNet 框架
+sevennet = ["sevenn>=0.5.0"]
+mattersim = ["mattersim>=0.1.0"]
+
+# GPU 完整依赖
+gpu = [
+    "torch>=2.1.0",
+    "mace-torch>=0.3.0",
+    "torch-dftd>=0.4.0",
+]
+
+# 开发依赖
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.26.0",
+    "black>=23.12.0",
+    "ruff>=0.1.9",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+]
+
+# 文档
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/your-org/mofsim-bench"
+Documentation = "https://mofsim-bench.readthedocs.io"
+Repository = "https://github.com/your-org/mofsim-bench"
+Issues = "https://github.com/your-org/mofsim-bench/issues"
+
+
+[project.scripts]
+mofsim-server = "scripts.run_server:main"
+mofsim-worker = "scripts.run_worker:main"
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*", "core*", "db*", "workers*", "storage*", "logging_config*", "alerts*", "sdk*", "mof_benchmark*"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "W", "I", "UP", "B", "C4"]
+ignore = ["E501"]
+
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

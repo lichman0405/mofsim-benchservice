@@ -1,0 +1,115 @@
+# MOFSimBench Docker Compose 配置
+#
+# 启动所有服务:
+#   docker-compose -f docker/docker-compose.yml up -d
+#
+# 仅启动依赖服务 (开发用):
+#   docker-compose -f docker/docker-compose.yml up -d postgres redis
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: mofsim-postgres
+    environment:
+      POSTGRES_USER: mofsim
+      POSTGRES_PASSWORD: mofsim_password
+      POSTGRES_DB: mofsim_bench
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mofsim -d mofsim_bench"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mofsim-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: mofsim-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mofsim-network
+
+  # API 服务器
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: mofsim-api
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=mofsim
+      - DB_PASSWORD=mofsim_password
+      - DB_NAME=mofsim_bench
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENVIRONMENT=production
+      - DEBUG=false
+    ports:
+      - "8000:8000"
+    volumes:
+      - api_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - mofsim-network
+
+  # Celery Worker (需要 GPU 运行时)
+  # worker:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/Dockerfile.worker
+  #   container_name: mofsim-worker
+  #   environment:
+  #     - DB_HOST=postgres
+  #     - REDIS_HOST=redis
+  #     - CUDA_VISIBLE_DEVICES=0
+  #   volumes:
+  #     - worker_data:/app/data
+  #   depends_on:
+  #     - redis
+  #     - postgres
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   networks:
+  #     - mofsim-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_data:
+  # worker_data:
+
+networks:
+  mofsim-network:
+    driver: bridge

@@ -1,0 +1,51 @@
+# MOFSimBench API 服务器 Dockerfile
+#
+# 构建: docker build -t mofsim-bench-api -f docker/Dockerfile.api .
+# 运行: docker run -p 8000:8000 mofsim-bench-api
+
+FROM python:3.11-slim
+
+LABEL maintainer="MOFSimBench Team"
+LABEL description="MOFSimBench API Server"
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制依赖文件
+COPY pyproject.toml ./
+
+# 安装 Python 依赖
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
+
+# 复制应用代码
+COPY api/ ./api/
+COPY core/ ./core/
+COPY db/ ./db/
+COPY storage/ ./storage/
+COPY logging_config/ ./logging_config/
+COPY alerts/ ./alerts/
+COPY config/ ./config/
+
+# 创建数据目录
+RUN mkdir -p /app/data/uploads /app/data/results /app/data/logs
+
+# 设置环境变量
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# 暴露端口
+EXPOSE 8000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
+# 启动命令
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
