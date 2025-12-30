@@ -4,9 +4,12 @@
 参考文档: docs/architecture/api_design.md 第三节
 """
 from fastapi import APIRouter, Query, Path, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from typing import Optional
 from uuid import UUID
 import math
+import asyncio
+import json
 
 from sqlalchemy.orm import Session
 
@@ -27,6 +30,7 @@ from api.schemas.response import APIResponse, PaginationInfo
 from api.dependencies import get_db, get_priority_queue, get_gpu_manager
 from api.middleware.error_handler import TaskNotFoundError
 from core.services import TaskService
+from core.services.log_service import get_log_service, TaskLogService
 from db.models import TaskType as DBTaskType, TaskPriority as DBPriority
 
 router = APIRouter()
@@ -415,23 +419,89 @@ async def cancel_task(
 @router.get("/{task_id}/logs")
 async def get_task_logs(
     task_id: UUID = Path(..., description="任务 ID"),
-    level: Optional[str] = Query(None, description="日志级别过滤"),
+    level: Optional[str] = Query(None, description="日志级别过滤 (DEBUG, INFO, WARNING, ERROR, CRITICAL)"),
     limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+    offset: int = Query(0, ge=0, description="偏移量"),
     service: TaskService = Depends(get_task_service)
 ):
-    """获取任务日志"""
+    """
+    获取任务日志
+    
+    支持按级别过滤和分页查询
+    """
     # 确保任务存在
     task = service.get_task(task_id)
     
-    # TODO: Phase 6 实现日志存储和查询
+    # 获取日志
+    log_service = get_log_service()
+    logs = log_service.get_task_logs(
+        task_id=str(task_id),
+        level=level,
+        limit=limit,
+        offset=offset,
+    )
+    
     return APIResponse(
         success=True,
         code=200,
-        message="日志功能将在 Phase 6 实现",
+        message="获取任务日志成功",
         data={
             "task_id": str(task_id),
-            "logs": [],
-            "note": "Log retrieval will be implemented in Phase 6"
+            "logs": [log.to_dict() for log in logs],
+            "count": len(logs),
+            "limit": limit,
+            "offset": offset,
+        }
+    )
+
+
+@router.get("/{task_id}/logs/stream")
+async def stream_task_logs(
+    task_id: UUID = Path(..., description="任务 ID"),
+    include_history: bool = Query(True, description="是否包含历史日志"),
+    history_limit: int = Query(50, ge=0, le=500, description="历史日志条数"),
+    service: TaskService = Depends(get_task_service)
+):
+    """
+    实时日志流 (Server-Sent Events)
+    
+    通过 SSE 推送任务执行过程中的实时日志
+    客户端可通过 EventSource API 订阅
+    
+    示例:
+    ```javascript
+    const evtSource = new EventSource('/api/v1/tasks/{task_id}/logs/stream');
+    evtSource.onmessage = (event) => {
+        console.log(JSON.parse(event.data));
+    };
+    ```
+    """
+    # 确保任务存在
+    task = service.get_task(task_id)
+    
+    log_service = get_log_service()
+    
+    async def generate():
+        """SSE 事件生成器"""
+        async for entry in log_service.stream_task_logs(
+            task_id=str(task_id),
+            include_history=include_history,
+            history_limit=history_limit,
+        ):
+            # SSE 格式: data: {...}\n\n
+            if entry.message == "heartbeat":
+                yield f": heartbeat\n\n"
+            else:
+                data = json.dumps(entry.to_dict(), ensure_ascii=False)
+                yield f"data: {data}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # 禁用 nginx 缓冲
         }
     )
 

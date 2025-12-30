@@ -3,8 +3,11 @@
 
 参考文档: docs/engineering_requirements.md 3.5 节
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi.responses import StreamingResponse
 from typing import Optional
+import json
+import asyncio
 
 from api.schemas.system import (
     HealthResponse,
@@ -17,6 +20,8 @@ from api.schemas.system import (
 from api.schemas.response import APIResponse
 from api.dependencies import get_gpu_manager, get_priority_queue, get_scheduler
 from core.config import get_settings
+from core.services.log_service import get_log_service
+from logging_config.archive import get_archive_manager
 
 router = APIRouter()
 settings = get_settings()
@@ -130,5 +135,113 @@ async def get_scheduler_stats(scheduler=Depends(get_scheduler)):
         code=200,
         message="查询成功",
         data=scheduler.get_stats()
+    )
+
+
+@router.get("/logs")
+async def get_system_logs(
+    level: Optional[str] = Query(None, description="日志级别过滤"),
+    limit: int = Query(100, ge=1, le=1000, description="返回条数"),
+):
+    """
+    获取系统日志
+    
+    返回最近的系统日志条目
+    """
+    log_service = get_log_service()
+    logs = log_service.get_system_logs(limit=limit, level=level)
+    
+    return APIResponse(
+        success=True,
+        code=200,
+        message="获取系统日志成功",
+        data={
+            "logs": [log.to_dict() for log in logs],
+            "count": len(logs),
+        }
+    )
+
+
+@router.get("/logs/stream")
+async def stream_system_logs():
+    """
+    系统日志实时流 (Server-Sent Events)
+    
+    通过 SSE 推送系统日志
+    """
+    log_service = get_log_service()
+    
+    async def generate():
+        """SSE 事件生成器"""
+        subscriber_id, queue = log_service.subscribe_system()
+        
+        try:
+            while True:
+                try:
+                    entry = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    data = json.dumps(entry.to_dict(), ensure_ascii=False)
+                    yield f"data: {data}\n\n"
+                except asyncio.TimeoutError:
+                    yield f": heartbeat\n\n"
+        finally:
+            log_service.unsubscribe_system(subscriber_id)
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
+@router.get("/logs/stats")
+async def get_log_stats():
+    """获取日志统计信息"""
+    log_service = get_log_service()
+    archive_manager = get_archive_manager()
+    
+    return APIResponse(
+        success=True,
+        code=200,
+        message="获取日志统计成功",
+        data={
+            "service": log_service.get_stats(),
+            "archive": archive_manager.get_archive_stats(),
+        }
+    )
+
+
+@router.post("/logs/archive")
+async def trigger_log_archive():
+    """
+    触发日志归档
+    
+    手动触发日志压缩和归档操作
+    """
+    archive_manager = get_archive_manager()
+    stats = archive_manager.archive()
+    
+    return APIResponse(
+        success=True,
+        code=200,
+        message="日志归档完成",
+        data=stats
+    )
+
+
+@router.get("/logs/archives")
+async def list_log_archives():
+    """列出所有日志归档"""
+    archive_manager = get_archive_manager()
+    archives = archive_manager.list_archives()
+    
+    return APIResponse(
+        success=True,
+        code=200,
+        message="获取归档列表成功",
+        data={"archives": archives}
     )
 

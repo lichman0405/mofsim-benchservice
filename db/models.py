@@ -103,6 +103,7 @@ class Task(Base):
     
     # 关系
     structure = relationship("Structure", back_populates="tasks")
+    logs = relationship("TaskLog", back_populates="task", cascade="all, delete-orphan")
     
     # 索引
     __table_args__ = (
@@ -273,4 +274,51 @@ class Alert(Base):
     # 索引
     __table_args__ = (
         Index("ix_alerts_resolved_created", "resolved", "created_at"),
+    )
+
+
+class LogLevel(str, enum.Enum):
+    """日志级别枚举"""
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+
+class TaskLog(Base):
+    """
+    任务日志表
+    
+    存储任务执行过程中的日志
+    参考文档: docs/architecture/database_design.md 3.3 节
+    """
+    __tablename__ = "task_logs"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # 关联任务
+    task_id = Column(UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # 日志内容
+    level = Column(SQLEnum(LogLevel), nullable=False, default=LogLevel.INFO, index=True)
+    logger = Column(String(100), nullable=False)  # 日志来源，如 "task.optimization"
+    message = Column(Text, nullable=False)
+    
+    # 扩展数据
+    extra = Column(JSONB, default={})  # 额外结构化数据
+    
+    # GPU 信息
+    gpu_id = Column(Integer, nullable=True)
+    
+    # 时间戳
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # 关系
+    task = relationship("Task", back_populates="logs")
+    
+    # 索引
+    __table_args__ = (
+        Index("ix_task_logs_task_created", "task_id", "created_at"),
+        Index("ix_task_logs_level", "level", postgresql_where=(level.in_([LogLevel.ERROR, LogLevel.WARNING]))),
     )
