@@ -57,18 +57,18 @@ Results of the original benchmark runs can be found here: [https://dx.doi.org/10
 
 ## Table of Contents
 
-- [:rocket: Quick Start](#rocket-quick-start)
-- [:package: Installation](#package-installation)
-- [:gear: API Usage](#gear-api-usage)
-- [:file_folder: Project Structure](#file_folder-project-structure)
-- [:whale: Docker Deployment](#whale-docker-deployment)
-- [:book: Original Benchmark Usage](#book-original-benchmark-usage)
-- [:bar_chart: Analyzing Results](#bar_chart-analyzing-results)
-- [:handshake: Contributing](#handshake-contributing)
-- [:page_facing_up: Citation](#page_facing_up-citation)
+- [🚀 Quick Start](#quick-start)
+- [📦 Installation](#installation)
+- [⚙️ API Usage](#api-usage)
+- [📁 Project Structure](#project-structure)
+- [🐳 Docker Deployment](#docker-deployment)
+- [📖 Original Benchmark Usage](#original-benchmark-usage)
+- [📊 Analyzing Results](#analyzing-results)
+- [🤝 Contributing](#contributing)
+- [📄 Citation](#citation)
 
 
-## :rocket: Quick Start
+## 🚀 Quick Start
 
 The fastest way to get started is using Docker:
 
@@ -94,7 +94,7 @@ python scripts/run_worker.py  # Terminal 2
 ```
 
 
-## :package: Installation
+## 📦 Installation
 
 ### Prerequisites
 
@@ -169,7 +169,7 @@ python scripts/run_worker.py
 ```
 
 
-## :gear: API Usage
+## ⚙️ API Usage
 
 ### Python SDK
 
@@ -222,7 +222,7 @@ results = client.get_task_results(task["task_id"])
 - **interaction_energy**: Gas-MOF interaction energy
 
 
-## :file_folder: Project Structure
+## 📁 Project Structure
 
 
 The repository is organized as follows:
@@ -250,7 +250,7 @@ The repository is organized as follows:
 	- `setup/`: Configuration files for calculators (e.g., `calculators.yaml`, `calculator.py`).
 
 
-## :whale: Docker Deployment
+## 🐳 Docker Deployment
 
 ```bash
 # Build and start all services
@@ -264,7 +264,7 @@ docker-compose -f docker/docker-compose.yml down
 ```
 
 
-## :book: Original Benchmark Usage
+## 📖 Original Benchmark Usage
 
 The benchmark is optimized to run on distributed systems managed with SLURM and can be run with a single command. On different systems, each task can also be easily called using the respective Python scripts.
 
@@ -310,7 +310,7 @@ To perform the task and analysis, the GoldDAC `test.xyz` file must be placed in 
 Structures must also be extracted into the `mof_benchmark/experiments/structures/golddac` directory. A python notebook is provided to extract the structures from the `test.xyz` file.
 
 
-## :bar_chart: Analyzing the results
+## 📊 Analyzing Results
 
 To compute the results from the experiments, run the analysis scripts in `mof_benchmark/analysis`. You can quickly run everything using:
 
@@ -331,7 +331,7 @@ streamlit run Overview.py
 ```
 
 
-## :handshake: Contributing
+## 🤝 Contributing
 
 Contributions are welcome! The project can be extended with new task types, models, and features.
 
@@ -343,7 +343,7 @@ For API service contributions:
 - Add tests in `tests/`
 
 
-## :page_facing_up: Citation
+## 📄 Citation
 
 This service is based on MOFSimBench. For more technical details about the benchmark, please refer to the [original paper](https://doi.org/10.1038/s41524-025-01872-3).
 
