@@ -6,8 +6,8 @@
 |------|------|---------|---------|------|
 | Phase 1: 基础框架搭建 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 65 files, 3865 lines |
 | Phase 2: 任务队列与 GPU 调度 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 调度器+队列+测试 |
-| Phase 3: 核心任务 API 实现 | ⏳ 未开始 | - | - | |
-| Phase 4: 任务执行器实现 | ⏳ 未开始 | - | - | 需测试服务器 |
+| Phase 3: 核心任务 API 实现 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | CRUD+服务层+52测试 |
+| Phase 4: 任务执行器实现 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 6种执行器+Celery集成 |
 | Phase 5: 模型与结构管理 | ⏳ 未开始 | - | - | |
 | Phase 6: 日志系统完善 | ⏳ 未开始 | - | - | |
 | Phase 7: 回调与告警系统 | ⏳ 未开始 | - | - | |
@@ -152,7 +152,19 @@
 | GPU 显存正确分配和释放 | ⬜ |
 
 ### 备注
-_（记录遇到的问题和解决方案）_
+- 2025-12-30: Phase 4 完成
+  - 创建 TaskExecutor 基类 (core/tasks/base.py) - 统一执行框架、参数验证、日志
+  - 创建 TaskContext/TaskResult 数据类 - 标准化上下文和结果格式
+  - 实现 OptimizationExecutor - BFGS/LBFGS/FIRE + FrechetCellFilter
+  - 实现 StabilityExecutor - opt → NVT (Langevin) → NPT (Berendsen/NPT)
+  - 实现 BulkModulusExecutor - E-V 曲线 + Birch-Murnaghan EOS 拟合
+  - 实现 HeatCapacityExecutor - phonopy 声子计算集成
+  - 实现 InteractionEnergyExecutor - MOF-气体相互作用能
+  - 实现 SinglePointExecutor - 能量/力/应力计算
+  - 更新 workers/tasks/base.py - GPU 分配、模型加载、执行器集成
+  - 更新 6 个 Celery 任务处理器 - 集成对应执行器
+  - 16 files changed, 2328 insertions
+  - 52 测试通过
 
 ---
 
