@@ -6,7 +6,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from uuid import UUID
 
 from .response import PaginationInfo
 
@@ -20,8 +19,9 @@ class AlertLevel(str):
 
 class AlertRule(BaseModel):
     """告警规则"""
-    id: UUID = Field(..., description="规则 ID")
+    id: str = Field(..., description="规则 ID")
     name: str = Field(..., description="规则名称")
+    description: str = Field("", description="规则描述")
     condition: Dict[str, Any] = Field(..., description="触发条件")
     level: str = Field(..., description="告警级别")
     enabled: bool = Field(..., description="是否启用")
@@ -35,8 +35,8 @@ class AlertRuleListResponse(BaseModel):
 
 class AlertInfo(BaseModel):
     """告警信息"""
-    id: UUID = Field(..., description="告警 ID")
-    rule_id: Optional[UUID] = Field(None, description="触发的规则 ID")
+    id: str = Field(..., description="告警 ID")
+    rule_id: Optional[str] = Field(None, description="触发的规则 ID")
     level: str = Field(..., description="告警级别")
     alert_type: str = Field(..., description="告警类型")
     message: str = Field(..., description="告警消息")

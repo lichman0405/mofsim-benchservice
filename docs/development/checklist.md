@@ -10,7 +10,7 @@
 | Phase 4: 任务执行器实现 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 6种执行器+Celery集成 |
 | Phase 5: 模型与结构管理 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 模型注册+加载+结构服务 |
 | Phase 6: 日志系统完善 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | 日志服务+SSE+归档 |
-| Phase 7: 回调与告警系统 | ⏳ 未开始 | - | - | |
+| Phase 7: 回调与告警系统 | ✅ 已完成 | 2025-12-30 | 2025-12-30 | Webhook+告警规则+116测试 |
 | Phase 8: 系统管理与监控 | ⏳ 未开始 | - | - | |
 | Phase 9: Python SDK 开发 | ⏳ 未开始 | - | - | |
 | Phase 10: 测试与文档 | ⏳ 未开始 | - | - | 需测试服务器 |
@@ -246,24 +246,32 @@
 
 | ID | 任务 | 状态 | 完成日期 |
 |----|------|------|---------|
-| 7.1 | Webhook 回调 | ⏳ | |
-| 7.2 | 回调重试机制 | ⏳ | |
-| 7.3 | 告警规则引擎 | ⏳ | |
-| 7.4 | 告警检查器 | ⏳ | |
-| 7.5 | 告警通知器 | ⏳ | |
-| 7.6 | 告警 API | ⏳ | |
+| 7.1 | Webhook 回调 | ✅ | 2025-12-30 |
+| 7.2 | 回调重试机制 | ✅ | 2025-12-30 |
+| 7.3 | 告警规则引擎 | ✅ | 2025-12-30 |
+| 7.4 | 告警检查器 | ✅ | 2025-12-30 |
+| 7.5 | 告警通知器 | ✅ | 2025-12-30 |
+| 7.6 | 告警 API | ✅ | 2025-12-30 |
 
 ### 验收检查
 
 | 检查项 | 通过 |
 |--------|------|
-| 任务完成后 Webhook 回调发送成功 | ⬜ |
-| 回调失败自动重试 | ⬜ |
-| 告警规则可触发 | ⬜ |
-| 告警历史可查询 | ⬜ |
+| 任务完成后 Webhook 回调发送成功 | ✅ |
+| 回调失败自动重试 | ✅ |
+| 告警规则可触发 | ✅ |
+| 告警历史可查询 | ✅ |
 
 ### 备注
-_（记录遇到的问题和解决方案）_
+- 2025-12-30: Phase 7 完成
+  - 创建 WebhookClient (core/callback/webhook.py) - httpx 异步 HTTP、指数退避重试、HMAC 签名
+  - 创建 CallbackEvent 枚举 - task.created/started/completed/failed/cancelled/timeout/progress
+  - 创建 AlertRuleEngine (alerts/rules.py) - 7 个内置规则、自定义规则支持、冷却时间
+  - 创建 AlertChecker (alerts/checker.py) - 周期性指标收集、GPU/队列/磁盘/Worker 指标
+  - 创建 AlertNotifier (alerts/notifier.py) - 多渠道通知 (log/webhook/file)、告警解决
+  - 实现 alerts.py API - list_rules, get_rule, enable/disable, history, active, resolve, stats
+  - 添加 47 个告警/回调测试
+  - 116 测试通过
 
 ---
 
